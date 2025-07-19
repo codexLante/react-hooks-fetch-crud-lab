@@ -1,12 +1,12 @@
 import React from "react";
 import "whatwg-fetch";
+import "@testing-library/jest-dom"; // Add this import for toBeInTheDocument matcher
 import {
   fireEvent,
   render,
   screen,
   waitForElementToBeRemoved,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/extend-expect";
 import { server } from "../mocks/server";
 
 import App from "../components/App";
@@ -82,13 +82,25 @@ test("updates the answer when the dropdown is changed", async () => {
 
   await screen.findByText(/lorem testum 2/g);
 
-  fireEvent.change(screen.queryAllByLabelText(/Correct Answer/)[0], {
+  // Find the first dropdown and change its value
+  const firstDropdown = screen.queryAllByLabelText(/Correct Answer/)[0];
+  
+  fireEvent.change(firstDropdown, {
     target: { value: "3" },
   });
 
-  expect(screen.queryAllByLabelText(/Correct Answer/)[0].value).toBe("3");
+  // Wait a bit for the state update to complete
+  await new Promise(resolve => setTimeout(resolve, 100));
 
+  // The value should be updated immediately in the DOM
+  expect(firstDropdown.value).toBe("3");
+
+  // After rerender, the value should persist
   rerender(<App />);
-
+  
+  // Wait for the component to re-render and find the dropdown again
+  await screen.findByText(/lorem testum 2/g);
+  
+  // Check that the value persisted after rerender
   expect(screen.queryAllByLabelText(/Correct Answer/)[0].value).toBe("3");
 });
